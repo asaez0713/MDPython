@@ -52,7 +52,6 @@ def readinit(datafile): # read lammps init data file
     global mass, aatype, pos, vel, acc, masses, bonds, hessian
 
     acc = numpy.zeros((natoms,3))
-    hessian = numpy.zeros((3*natoms,3*natoms))
 
     mass, aatype, pos, vel, masses, bonds = mdinput.make_arrays(datafile)
 
