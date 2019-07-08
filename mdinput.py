@@ -180,11 +180,13 @@ def readsysvals(infile):
                 bond_styles = match.group(key)
                 if re.search('harmonic',bond_styles,flags=re.IGNORECASE):
                     bond_style = 0
+                    print('Reading in harmonic bond coefficients for',tbonds,'types')
                     for i in range(tbonds):
                         line = f.readline()
                         bondcoeff.append([float(line.split()[j+2]) for j in range(2)])
                 elif re.search('morse',bond_styles,flags=re.IGNORECASE):
                     bond_style = 1
+                    print('Reading in morse bond coefficients for',tbonds,'types')
                     for i in range(tbonds):
                         line = f.readline()
                         bondcoeff.append([float(line.split()[j+2]) for j in range(3)])
