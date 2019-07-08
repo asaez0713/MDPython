@@ -132,7 +132,6 @@ for istep in range(1,nsteps+1):
         # remove lowest eigegvalues (translations of entire system)
         idx = numpy.argmin(numpy.abs(w.real))
         while abs(w[idx]) < tol:
-            print("Warning! Removing eigenvalue < tol",w[idx])
             w = numpy.delete(w,idx)
             idx = numpy.argmin(numpy.abs(w.real))
         eig_array.append(w.real) # only get real part of array - imag do to round off error is small so we throw away.
