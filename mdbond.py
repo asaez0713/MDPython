@@ -42,7 +42,7 @@ def bond_force(bond_style,nbonds,bonds,bondcoeff,pos,acc):
         acc[bonds[i][1]] += dpos  # add forces to particles
         acc[bonds[i][2]] -= dpos
 
-    return(pbond)
+    return pbond
 
 #--------------------INM for harmonic-----------------------------
 def inm(bond_style,nbonds,bonds,bondcoeff,pos,masses):
