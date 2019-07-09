@@ -36,6 +36,7 @@ pot = numpy.zeros(6)
 kb = 1.38064852e-23 # Boltzmann's constant
 T = 298             # system temp - variable?
 Q = 1               # thermostat mass - value? 3NkT/(om^2) <- what are frequencies?
+zeta = 0
 
 #------------------------------------------------
 def zero_momentum(masses,vel): #zero the linear momentum
@@ -57,7 +58,6 @@ def readinit(datafile): # read lammps init data file
     global mass, aatype, pos, vel, acc, masses, bonds, hessian, zeta, Q
 
     acc = numpy.zeros((natoms,3))
-    zeta = numpy.zeros(natoms)
 
     mass, aatype, pos, vel, masses, bonds = mdinput.make_arrays(datafile,reps)
 
@@ -92,35 +92,21 @@ def force(): # get forces from potentials
     acc /= masses
 
 #-----------------------------------------------------------
+def step(): # velocity verlet
+    global pos, vel, acc, dt
+
+    vel += acc*dt/2.0
+    pos += vel*dt
+    force()
+    vel += acc*dt/2.0
+
+#-----------------------------------------------------------
 
 # read command line for input file
 if (len(sys.argv) < 2):  # error check that we have an input file
     print("No input file? or wrong number of arguments")
     exit(1)
 print (sys.argv)
-
-if len(sys.argv) > 2:
-    if re.search('nvt',sys.argv[2],flags=re.IGNORECASE):
-        def step(): # nose-hoover thermostat
-            global pos, vel, acc, dt, zeta, masses, natoms, T
-        
-            vel_old = numpy.array(vel[:])
-            vel += (acc - numpy.dot(zeta,vel))*dt/2.0
-            pos += vel*dt + (acc - numpy.dot(zeta,vel))*dt*dt/2.0
-            force()
-            zeta += (numpy.dot(masses.transpose()[0],numpy.dot(vel_old,vel_old.transpose())/2.0) - 3.0*(natoms+1)*kb*T)*dt/(2.0*Q)
-            zeta += (numpy.dot(masses.transpose()[0],numpy.dot(vel,vel.transpose())/2.0) - 3.0*(natoms+1)*kb*T)*dt/(2.0*Q)
-            vel += acc*dt/2.0
-            vel = [vel[i]/(1 + zeta[i]*dt/2) for i in range(len(vel))]
-
-else:
-    def step(): # velocity verlet
-        global pos, vel, acc, dt
-
-        vel += acc*dt/2.0
-        pos += vel*dt
-        force()
-        vel += acc*dt/2.0
 
 readin() # read infile
 readinit(initfile)
@@ -178,7 +164,7 @@ if(nconf==0):
     print("No configurations calculated eigenvalues! thus NOT calculating historgram")
 else:
     print("Creating Histogram with",len(eig_array),"configurations")
-    q1, q3 = numpy.percentile(eig_array, [25, 75])
+    q1, q3 = numpy.percentile(numpy.array(eig_array), [25, 75])
     iqr = q3 - q1
 
     fd_width = 2*iqr/(nconf**(1/3))
