@@ -32,6 +32,10 @@ global logfile      # file to output thermodata
 box = numpy.zeros(3)
 pot = numpy.zeros(6)
 
+kb = 1.38064852e-23 # Boltzmann's constant
+T = 298             # system temp - variable?
+Q = 1               # thermostat mass - value? 3NkT/(om^2) <- what are frequencies?
+
 #------------------------------------------------
 def zero_momentum(masses,vel): #zero the linear momentum
     mom = masses*vel # get momentum
@@ -49,21 +53,22 @@ def readinit(datafile): # read lammps init data file
     print("Box",box)
 
     # allocate arrays from data
-    global mass, aatype, pos, vel, acc, masses, bonds, hessian
+    global mass, aatype, pos, vel, acc, masses, bonds, hessian, zeta, Q
 
     acc = numpy.zeros((natoms,3))
+    zeta = numpy.zeros(natoms)
 
-    mass, aatype, pos, vel, masses, bonds = mdinput.make_arrays(datafile)
+    mass, aatype, pos, vel, masses, bonds = mdinput.make_arrays(datafile,reps)
 
 #-------------------------------------------
 def readin(): # read lammps like infile
 
     global nsteps, dt, initfile, ithermo, idump, dumpfile, bond_style, bondcoeff
     global logfile, inmfile, inmo
-    global bondcoeff
+    global bondcoeff, reps
 
     # print lines
-    data, bond_style, bondcoeff = mdinput.readsysvals(sys.argv[1]) # read lammps in file
+    data, bond_style, bondcoeff, reps = mdinput.readsysvals(sys.argv[1]) # read lammps in file
     dt, initfile, bond_styles, idump, dumpfile, ithermo, logfile, inmfile, inmo, nsteps = data
     print("dt, initfile, bond_styles, idump, dumpfile, ithermo, logfile, inmfile, inmo, nsteps",data)
 
@@ -87,12 +92,16 @@ def force(): # get forces from potentials
 
 #-----------------------------------------------------------
 def step(): # velocity verlet (using 1/2 steps)
-    global pos, vel, acc, dt
+    global pos, vel, acc, dt, zeta, masses, natoms, T
     # print istep,pos,vel,acc
-    vel += acc*dt/2.0
-    pos += vel*dt
+    vel_old = vel[:]
+    vel += (acc - zeta*vel)*dt/2.0
+    pos += vel*dt + (acc - zeta*vel)*dt*dt/2.0
     force()
+    zeta += (numpy.sum(masses*vel_old*vel_old/2.0,axis=0) - 3.0(natoms+1)*kb*T)*dt/(2.0*Q)
+    zeta += (numpy.sum(masses*vel*vel/2.0,axis=0) - 3.0(natoms+1)*kb*T)*dt/(2.0*Q)
     vel += acc*dt/2.0
+    vel /= 1 + zeta*dt/2
 
 #-----------------------------------------------------------
 
