@@ -34,7 +34,7 @@ box = numpy.zeros(3)
 pot = numpy.zeros(6)
 
 kb = 1.38064852e-23 # Boltzmann's constant
-T = 75              # system temp 
+T = 298              # system temp 
 zeta = numpy.zeros(2)
 Q = numpy.array([1,1])              #to be updated - Q = 3NkT/(omega)^2 <- what are freqs?
 vtherm = numpy.zeros(2)
@@ -146,7 +146,6 @@ else:
 readin() # read infile
 readinit(initfile)
 ke = (0.5*masses.transpose()[0]*numpy.array([numpy.dot(vec,vec) for vec in vel])).sum()
-print(ke)
 
 # inital force and adjustments
 zero_momentum(masses,vel)  # zero the momentum
