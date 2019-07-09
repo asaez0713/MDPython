@@ -53,7 +53,7 @@ re_dict_arrays = {
         'bonds': re.compile(r'Bonds\n')
         }
 
-def make_arrays(datafile):
+def make_arrays(datafile,reps):
     global natoms, atypes, nbonds, tbonds, box
     
     natoms, atypes, nbonds, tbonds, box[0], box[1], box[2] = readinvals(datafile) 
@@ -138,6 +138,30 @@ def make_arrays(datafile):
     if len(bonds) == 0:
         print('No bonds found')
 
+    pos_copy = pos[:]
+    vel_copy = vel[:]
+    bonds_copy = bonds[:]
+    count = 1 
+
+    for i in range(reps[0]):
+        for j in range(reps[1]):
+            for k in range(reps[2]):
+                if i == j == k == 0:
+                    continue
+                offset = [i*box[0],j*box[1],k*box[2]]
+                for vec in pos_copy:
+                    temp = [sum(x) for x in zip(vec,offset)]
+                    pos.append(temp)
+                bond_offset = [0,count*len(pos_copy),count*len(pos_copy)]
+                for bond in bonds_copy:
+                    temp = [sum(x) for x in zip(bond,bond_offset)]
+                    bonds.append(temp)
+                count += 1
+
+    fact = np.prod(reps)
+    natoms *= fact
+    nbonds *= fact
+
     return np.array(mass), np.array(aatype), np.array(pos), np.array(vel), np.array(masses), np.array(bonds)
 
 re_dict_sysvals = {
@@ -148,13 +172,15 @@ re_dict_sysvals = {
         'dump': re.compile(r'dump traj all xyz (?P<dump>\d+ [a-z.]+)'),
         'bond_style': re.compile(r'bond_style (?P<bond_style>[a-z]+)'),
         'logfile': re.compile(r'log (?P<logfile>[a-z.]+)'),
-        'inm': re.compile(r'inm (?P<inm>[a-z.]+ \d+)')
+        'inm': re.compile(r'inm (?P<inm>[a-z.]+ \d+)'),
+        'reps': re.compile(r'replicate (?P<reps>\d+ \d+ \d+)')
         }
 
 def readsysvals(infile):
     with open(infile,'r') as f:
         data = []
         bondcoeff = []
+        reps = [1,1,1]
         line = f.readline()
         while line:
             key, match = parse_line(line,re_dict_sysvals)
@@ -192,8 +218,11 @@ def readsysvals(infile):
                         bondcoeff.append([float(line.split()[j+2]) for j in range(3)])
                 else:
                     print('Unrecognized bond type')
+            if key == 'reps':
+                vals = match.group(key).split()
+                reps = [int(num) for num in vals]
             line = f.readline()
     
     bondcoeff = np.array(bondcoeff)
 
-    return data, bond_style, bondcoeff
+    return data, bond_style, bondcoeff, reps
