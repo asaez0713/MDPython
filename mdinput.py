@@ -161,6 +161,7 @@ def make_arrays(datafile,reps):
     fact = np.prod(reps)
     natoms *= fact
     nbonds *= fact
+    box = [np.prod(x) for x in zip(box,reps)]
 
     return np.array(mass), np.array(aatype), np.array(pos), np.array(vel), np.array(masses), np.array(bonds)
 
