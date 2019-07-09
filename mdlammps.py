@@ -33,11 +33,6 @@ global logfile      # file to output thermodata
 box = numpy.zeros(3)
 pot = numpy.zeros(6)
 
-kb = 1.38064852e-23 # Boltzmann's constant
-T = 298             # system temp - variable?
-Q = 1               # thermostat mass - value? 3NkT/(om^2) <- what are frequencies?
-zeta = 0
-
 #------------------------------------------------
 def zero_momentum(masses,vel): #zero the linear momentum
     mom = masses*vel # get momentum
