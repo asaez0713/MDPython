@@ -94,14 +94,14 @@ def force(): # get forces from potentials
 def step(): # velocity verlet (using 1/2 steps)
     global pos, vel, acc, dt, zeta, masses, natoms, T
     # print istep,pos,vel,acc
-    vel_old = vel[:]
-    vel += (acc - zeta*vel)*dt/2.0
-    pos += vel*dt + (acc - zeta*vel)*dt*dt/2.0
+    vel_old = numpy.array(vel[:])
+    vel += (acc - numpy.dot(zeta,vel))*dt/2.0
+    pos += vel*dt + (acc - numpy.dot(zeta,vel))*dt*dt/2.0
     force()
-    zeta += (numpy.sum(masses*vel_old*vel_old/2.0,axis=0) - 3.0(natoms+1)*kb*T)*dt/(2.0*Q)
-    zeta += (numpy.sum(masses*vel*vel/2.0,axis=0) - 3.0(natoms+1)*kb*T)*dt/(2.0*Q)
+    zeta += (numpy.dot(masses.transpose()[0],numpy.dot(vel_old,vel_old.transpose())/2.0) - 3.0*(natoms+1)*kb*T)*dt/(2.0*Q)
+    zeta += (numpy.dot(masses.transpose()[0],numpy.dot(vel,vel.transpose())/2.0) - 3.0*(natoms+1)*kb*T)*dt/(2.0*Q)
     vel += acc*dt/2.0
-    vel /= 1 + zeta*dt/2
+    vel = [vel[i]/(1 + zeta[i]*dt/2) for i in range(len(vel))]
 
 #-----------------------------------------------------------
 
