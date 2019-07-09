@@ -5,6 +5,7 @@ import sys
 import numpy
 import math
 import time
+import re
 
 #import mdglobal  # file with global variables
 import mdinput   # file with input routines
@@ -91,25 +92,37 @@ def force(): # get forces from potentials
     acc /= masses
 
 #-----------------------------------------------------------
-def step(): # velocity verlet (using 1/2 steps)
-    global pos, vel, acc, dt, zeta, masses, natoms, T
-    # print istep,pos,vel,acc
-    vel_old = numpy.array(vel[:])
-    vel += (acc - numpy.dot(zeta,vel))*dt/2.0
-    pos += vel*dt + (acc - numpy.dot(zeta,vel))*dt*dt/2.0
-    force()
-    zeta += (numpy.dot(masses.transpose()[0],numpy.dot(vel_old,vel_old.transpose())/2.0) - 3.0*(natoms+1)*kb*T)*dt/(2.0*Q)
-    zeta += (numpy.dot(masses.transpose()[0],numpy.dot(vel,vel.transpose())/2.0) - 3.0*(natoms+1)*kb*T)*dt/(2.0*Q)
-    vel += acc*dt/2.0
-    vel = [vel[i]/(1 + zeta[i]*dt/2) for i in range(len(vel))]
 
 #-----------------------------------------------------------
 
 # read command line for input file
-if (len(sys.argv) != 2):  # error check that we have an input file
+if (len(sys.argv) < 2):  # error check that we have an input file
     print("No input file? or wrong number of arguments")
     exit(1)
 print (sys.argv)
+
+if len(sys.argv) > 2:
+    if re.search('nvt',sys.argv[2],flags=re.IGNORECASE):
+        def step(): # nose-hoover thermostat
+            global pos, vel, acc, dt, zeta, masses, natoms, T
+        
+            vel_old = numpy.array(vel[:])
+            vel += (acc - numpy.dot(zeta,vel))*dt/2.0
+            pos += vel*dt + (acc - numpy.dot(zeta,vel))*dt*dt/2.0
+            force()
+            zeta += (numpy.dot(masses.transpose()[0],numpy.dot(vel_old,vel_old.transpose())/2.0) - 3.0*(natoms+1)*kb*T)*dt/(2.0*Q)
+            zeta += (numpy.dot(masses.transpose()[0],numpy.dot(vel,vel.transpose())/2.0) - 3.0*(natoms+1)*kb*T)*dt/(2.0*Q)
+            vel += acc*dt/2.0
+            vel = [vel[i]/(1 + zeta[i]*dt/2) for i in range(len(vel))]
+
+else:
+    def step(): # velocity verlet
+        global pos, vel, acc, dt
+
+        vel += acc*dt/2.0
+        pos += vel*dt
+        force()
+        vel += acc*dt/2.0
 
 readin() # read infile
 readinit(initfile)
