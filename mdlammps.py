@@ -93,8 +93,6 @@ def force(): # get forces from potentials
 
 #-----------------------------------------------------------
 
-#-----------------------------------------------------------
-
 # read command line for input file
 if (len(sys.argv) < 2):  # error check that we have an input file
     print("No input file? or wrong number of arguments")
