@@ -19,6 +19,7 @@ print("Number of configurations: ",nconf)
 
 data = numpy.zeros((nwindow,natoms,3))
 vac = numpy.zeros(nwindow)
+norm = numpy.zeros(nwindow)
 
 for i in range(nwindow): # get initial data
     for j in range(natoms):
@@ -35,6 +36,7 @@ for i in range(nconf-nwindow):
     for k in range(nwindow):
         for j in range(natoms):
             vac[k] += numpy.dot(data[k][j],data[0][j])
+            norm[k] += numpy.dot(data[0][j],data[0][j])
 
     # get next data window
     for j in range(nwindow-1): # move array down
@@ -48,7 +50,7 @@ for i in range(nconf-nwindow):
 
 print('Done correlating. total time = {:g} seonds'.format(time.time()-ttime))
 
-vac /= nwindow
+vac /= norm
 
 print("Writing vac.dat")
 file = open("vac.dat","w")
