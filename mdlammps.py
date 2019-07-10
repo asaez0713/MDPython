@@ -33,11 +33,15 @@ global logfile      # file to output thermodata
 box = numpy.zeros(3)
 pot = numpy.zeros(6)
 
-kb = 1.38064852e-23 # Boltzmann's constant
-T = 298              # system temp 
-zeta = numpy.zeros(2)
-Q = numpy.array([1,1])              #to be updated - Q = 3NkT/(omega)^2 <- what are freqs?
+kb = 1.38064852e-23  # Boltzmann's constant
+T = 298.0            # system temp 
+zeta = numpy.zeros(2) 
+Q = numpy.array([1,1])            #to be updated - Q = 3NkT/(omega)^2 <- what are freqs?
 vtherm = numpy.zeros(2)
+G = numpy.zeros(2)
+w = [1/(2 - 2**(1/3)),0,0]
+w[2] = w[0]
+w[1] = 1- 2*w[0]
 
 #------------------------------------------------
 def zero_momentum(masses,vel): #zero the linear momentum
@@ -93,25 +97,34 @@ def force(): # get forces from potentials
     acc /= masses
 
 #-----------------------------------------------------------
-def nhchain(Q,dt,natoms,vtherm,zeta,ke,vel):
-    G2 = Q[0]*vtherm[0]*vtherm[0] - kb*T
-    vtherm[1] += G2*dt/4.0
-    vtherm[0] *= math.exp(-vtherm[1]*dt/8.0)
-    G1 = (2.0*ke - (3*natoms + 1)*kb*T)/Q[0]
-    vtherm[0] += G1*dt/4.0
-    vtherm[0] *= math.exp(-vtherm[1]*dt/8.0)
-    zeta[0] += vtherm[0]*dt/2.0
-    zeta[1] += vtherm[1]*dt/2.0
-    s = math.exp(-vtherm[0]*dt/2.0)
-    vel *= s
-    ke *= s*s
-    vtherm[0] *= math.exp(-vtherm[1]*dt/8.0)
-    G1 = (2.0*ke - (3*natoms + 1)*kb*T)/Q[0]
-    vtherm[0] += G1*dt/4.0
-    vtherm[0] *= math.exp(-vtherm[1]*dt/8.0)
-    G1 = (Q[0]*vtherm[0]*vtherm[0] - kb*T)/Q[1]
-    vtherm[1] += G2*dt/4.0
-    return ke
+def nhchain(Q,G,dt,natoms,vtherm,zeta,ke,vel):
+    
+    M = len(zeta)   #chain length
+    scale = 1.0
+    for i in range(3):
+        ts = w[i]*dt
+        for j in range(1,M-1):
+            G[M-j] = (Q[M-j-1]*vtherm[M-j-1]*vtherm[M-j-1] - kb*T)/Q[M-j-1]
+            vtherm[M-j] += G[M-j]*ts/4.0
+            vtherm[M-j-1] *= math.exp(-vtherm[M-j]*ts/8.0)
+        vtherm[0] *= math.exp(-vtherm[1]*ts/8.0)
+        G[0] = (ke - (3.0*natoms)*kb*T)/Q[M-2]
+        vtherm[0] += G[0]*ts/4.0
+        vtherm[0] *= math.exp(-vtherm[1]*ts/8.0)
+        scale *= math.exp(-vtherm[0]*ts/2.0)
+        ke *= math.exp(-vtherm[0]*ts)
+        zeta += vtherm*ts/2.0
+        vtherm[0] *= math.exp(-vtherm[1]*ts/8.0)
+        G[0] = (ke - 3.0*natoms*kb*T)/Q[M-2]
+        vtherm[0] += G[0]*ts/4.0
+        for j in range(1,M-1):
+            vtherm[j] *= math.exp(-vtherm[j+1]*ts/8.0)
+            G[j] = (Q[j-1]*vtherm[j-1]*vtherm[j-1] - kb*T)/Q[j]
+            vtherm[j] += G[j]*ts/4.0
+
+    vel *= scale
+
+    return ke, vel
 
 #-----------------------------------------------------------
 
@@ -125,14 +138,13 @@ if len(sys.argv) > 2:
     if re.search('nvt',sys.argv[2],flags=re.IGNORECASE):
         def step(): # nose-hoover thermostat
             global pos, vel, acc, dt, zeta, Q, masses, natoms, T, ke
-        
-            ke = nhchain(Q,dt,natoms,vtherm,zeta,ke,vel)
-            pos += vel*dt/2.0
+            
+            ke,vel = nhchain(Q,G,dt,natoms,vtherm,zeta,ke,vel)
+            vel += acc*dt/2.0
+            pos += vel*dt
             force()
-            vel += acc*dt
-            pos += vel*dt/2.0
-            ke = (0.5*masses.transpose()[0]*numpy.array([numpy.dot(vec,vec) for vec in vel])).sum()
-            ke = nhchain(Q,dt,natoms,vtherm,zeta,ke,vel)
+            vel += acc*dt/2.0
+            ke,vel = nhchain(Q,G,dt,natoms,vtherm,zeta,ke,vel)
 
 else:
     def step(): # velocity verlet
@@ -145,7 +157,7 @@ else:
 
 readin() # read infile
 readinit(initfile)
-ke = (0.5*masses.transpose()[0]*numpy.array([numpy.dot(vec,vec) for vec in vel])).sum()
+ke = (0.5*numpy.dot(masses.transpose()[0],numpy.array([numpy.dot(vec,vec) for vec in vel])))
 
 # inital force and adjustments
 zero_momentum(masses,vel)  # zero the momentum
