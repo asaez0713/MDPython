@@ -93,41 +93,6 @@ def force(): # get forces from potentials
     # torsion
     pot[3] = 0
 
-
-#-----------------------------------------------------------
-def nhchain(Q,G,dt,natoms,vtherm,zeta,ke,vel):
-    
-    M = len(zeta)   #chain length
-    scale = 1.0
-    for i in range(3):
-        ts = w[i]*dt
-        for j in range(1,M-2):
-            G[M-j] = (Q[M-j-1]*vtherm[M-j-1]*vtherm[M-j-1] - kb*T)/Q[M-j-1]
-            vtherm[M-j] += G[M-j]*ts/4.0
-            vtherm[M-j-1] *= math.exp(-vtherm[M-j]*ts/8.0)
-        vtherm[0] *= math.exp(-vtherm[1]*ts/8.0)
-        G[0] = (ke - (3.0*natoms)*kb*T)/Q[M-2]
-        vtherm[0] += G[0]*ts/4.0
-        vtherm[0] *= math.exp(-vtherm[1]*ts/8.0)
-        scale *= math.exp(-vtherm[0]*ts/2.0)
-        ke *= math.exp(-vtherm[0]*ts)
-        zeta += vtherm*ts/2.0
-        vtherm[0] *= math.exp(-vtherm[1]*ts/8.0)
-        G[0] = (ke - 3.0*natoms*kb*T)/Q[M-2]
-        vtherm[0] += G[0]*ts/4.0
-        vtherm[0] *= math.exp(-vtherm[1]*ts/8.0)
-        for j in range(1,M-2):
-            vtherm[j] *= math.exp(-vtherm[j+1]*ts/8.0)
-            G[j] = (Q[j-1]*vtherm[j-1]*vtherm[j-1] - kb*T)/Q[j]
-            vtherm[j] += G[j]*ts/4.0
-            vtherm[j] *= math.exp(-vtherm[j+1]*ts/8.0)
-        G[M-1] = (Q[M-2]*vtherm[M-2]*vtherm[M-2] - kb*T)/Q[M-1]
-        vtherm[M-1] += G[M-1]*ts/4.0
-
-    vel *= scale
-
-    return ke, vel
-
 #-----------------------------------------------------------
 
 # read command line for input file
@@ -141,12 +106,12 @@ if len(sys.argv) > 2:
         def step(): # nose-hoover thermostat
             global pos, vel, acc, dt, ke
             
-            ke,vel = nhchain(Q,G,dt,natoms,vtherm,zeta,ke,vel)
+            ke,vel = mdbond.nhchain(Q,G,dt,natoms,vtherm,zeta,ke,vel)
             vel += acc*dt/2.0
             pos += vel*dt
             force()
             vel += acc*dt/2.0
-            ke,vel = nhchain(Q,G,dt,natoms,vtherm,zeta,ke,vel)
+            ke,vel = mdbond.nhchain(Q,G,dt,natoms,vtherm,zeta,ke,vel)
 
 else:
     def step(): # velocity verlet

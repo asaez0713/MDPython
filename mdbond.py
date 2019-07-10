@@ -3,7 +3,7 @@
 import numpy as np
 import math
 
-def bond_force(bond_style,nbonds,bonds,bondcoeff,pos,acc):
+def bond_force(bond_style,nbonds,bonds,bondcoeff,pos,acc,masses):
 
     pbond = 0
     for i in range(nbonds): 
@@ -40,6 +40,8 @@ def bond_force(bond_style,nbonds,bonds,bondcoeff,pos,acc):
 
         acc[bonds[i][1]] += F  # add forces to particles
         acc[bonds[i][2]] -= F
+    
+    acc /= masses
 
     return pbond
 
@@ -98,3 +100,36 @@ def inm(bond_style,nbonds,bonds,bondcoeff,pos,masses):
         hessian[i] /= ma[i]
 
     return hessian
+
+
+def nhchain(Q, G, dt, natoms, vtherm, zeta, ke, vel):
+    M = len(zeta)  # chain length
+    scale = 1.0
+    for i in range(3):
+        ts = w[i] * dt
+        for j in range(1, M - 2):
+            G[M - j] = (Q[M - j - 1] * vtherm[M - j - 1] * vtherm[M - j - 1] - kb * T) / Q[M - j - 1]
+            vtherm[M - j] += G[M - j] * ts / 4.0
+            vtherm[M - j - 1] *= math.exp(-vtherm[M - j] * ts / 8.0)
+        vtherm[0] *= math.exp(-vtherm[1] * ts / 8.0)
+        G[0] = (ke - (3.0 * natoms) * kb * T) / Q[M - 2]
+        vtherm[0] += G[0] * ts / 4.0
+        vtherm[0] *= math.exp(-vtherm[1] * ts / 8.0)
+        scale *= math.exp(-vtherm[0] * ts / 2.0)
+        ke *= math.exp(-vtherm[0] * ts)
+        zeta += vtherm * ts / 2.0
+        vtherm[0] *= math.exp(-vtherm[1] * ts / 8.0)
+        G[0] = (ke - 3.0 * natoms * kb * T) / Q[M - 2]
+        vtherm[0] += G[0] * ts / 4.0
+        vtherm[0] *= math.exp(-vtherm[1] * ts / 8.0)
+        for j in range(1, M - 2):
+            vtherm[j] *= math.exp(-vtherm[j + 1] * ts / 8.0)
+            G[j] = (Q[j - 1] * vtherm[j - 1] * vtherm[j - 1] - kb * T) / Q[j]
+            vtherm[j] += G[j] * ts / 4.0
+            vtherm[j] *= math.exp(-vtherm[j + 1] * ts / 8.0)
+        G[M - 1] = (Q[M - 2] * vtherm[M - 2] * vtherm[M - 2] - kb * T) / Q[M - 1]
+        vtherm[M - 1] += G[M - 1] * ts / 4.0
+
+    vel *= scale
+
+    return ke, vel
