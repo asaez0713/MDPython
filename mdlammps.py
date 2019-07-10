@@ -36,7 +36,7 @@ pot = numpy.zeros(6)
 kb = 1.38064852e-23  # Boltzmann's constant
 T = 298.0            # system temp 
 zeta = numpy.zeros(2) 
-Q = numpy.array([1,1])            #to be updated - Q = 3NkT/(omega)^2 <- what are freqs?
+Q = numpy.array([1,1.1])            #to be updated - Q = 3NkT/(omega)^2 <- what are freqs?
 vtherm = numpy.zeros(2)
 G = numpy.zeros(2)
 w = [1/(2 - 2**(1/3)),0,0]
@@ -87,14 +87,12 @@ def force(): # get forces from potentials
     # lj
     pot[0] = 0
     # bonds
-    pot[1] = mdbond.bond_force(bond_style,nbonds,bonds,bondcoeff,pos,acc)
+    pot[1] = mdbond.bond_force(bond_style,nbonds,bonds,bondcoeff,pos,acc,masses)
     # bend
     pot[2] = 0
     # torsion
     pot[3] = 0
 
-    # change forces into accelerations
-    acc /= masses
 
 #-----------------------------------------------------------
 def nhchain(Q,G,dt,natoms,vtherm,zeta,ke,vel):
@@ -103,7 +101,7 @@ def nhchain(Q,G,dt,natoms,vtherm,zeta,ke,vel):
     scale = 1.0
     for i in range(3):
         ts = w[i]*dt
-        for j in range(1,M-1):
+        for j in range(1,M-2):
             G[M-j] = (Q[M-j-1]*vtherm[M-j-1]*vtherm[M-j-1] - kb*T)/Q[M-j-1]
             vtherm[M-j] += G[M-j]*ts/4.0
             vtherm[M-j-1] *= math.exp(-vtherm[M-j]*ts/8.0)
@@ -117,10 +115,14 @@ def nhchain(Q,G,dt,natoms,vtherm,zeta,ke,vel):
         vtherm[0] *= math.exp(-vtherm[1]*ts/8.0)
         G[0] = (ke - 3.0*natoms*kb*T)/Q[M-2]
         vtherm[0] += G[0]*ts/4.0
-        for j in range(1,M-1):
+        vtherm[0] *= math.exp(-vtherm[1]*ts/8.0)
+        for j in range(1,M-2):
             vtherm[j] *= math.exp(-vtherm[j+1]*ts/8.0)
             G[j] = (Q[j-1]*vtherm[j-1]*vtherm[j-1] - kb*T)/Q[j]
             vtherm[j] += G[j]*ts/4.0
+            vtherm[j] *= math.exp(-vtherm[j+1]*ts/8.0)
+        G[M-1] = (Q[M-2]*vtherm[M-2]*vtherm[M-2] - kb*T)/Q[M-1]
+        vtherm[M-1] += G[M-1]*ts/4.0
 
     vel *= scale
 
@@ -137,7 +139,7 @@ print (sys.argv)
 if len(sys.argv) > 2:
     if re.search('nvt',sys.argv[2],flags=re.IGNORECASE):
         def step(): # nose-hoover thermostat
-            global pos, vel, acc, dt, zeta, Q, masses, natoms, T, ke
+            global pos, vel, acc, dt, ke
             
             ke,vel = nhchain(Q,G,dt,natoms,vtherm,zeta,ke,vel)
             vel += acc*dt/2.0
