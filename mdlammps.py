@@ -2,7 +2,7 @@
 # run MD using lammps style input
 
 import sys
-import numpy
+import numpy as np
 import math
 import time
 import re
@@ -30,15 +30,15 @@ global hessian      # hessian matrix
 global abtype       # array of bond types
 global logfile      # file to output thermodata
 
-box = numpy.zeros(3)
-pot = numpy.zeros(6)
+box = np.zeros(3)
+pot = np.zeros(6)
 
 kb = 1.38064852e-23  # Boltzmann's constant
 T = 298.0            # system temp 
-zeta = numpy.zeros(2) 
-Q = numpy.array([1,1.1])            #to be updated - Q = 3NkT/(omega)^2 <- what are freqs?
-vtherm = numpy.zeros(2)
-G = numpy.zeros(2)
+zeta = np.zeros(2) 
+Q = np.array([1,1.1])            #to be updated - Q = 3NkT/(omega)^2 <- what are freqs?
+vtherm = np.zeros(2)
+G = np.zeros(2)
 w = [1/(2 - 2**(1/3)),0,0]
 w[2] = w[0]
 w[1] = 1- 2*w[0]
@@ -46,7 +46,7 @@ w[1] = 1- 2*w[0]
 #------------------------------------------------
 def zero_momentum(masses,vel): #zero the linear momentum
     mom = masses*vel # get momentum
-    tmom = numpy.sum(mom,axis=0)/numpy.sum(masses,axis=0) #total mom/ma
+    tmom = np.sum(mom,axis=0)/np.sum(masses,axis=0) #total mom/ma
     vel -= tmom #zero out
 
 #-------------------------------------------------
@@ -62,7 +62,7 @@ def readinit(datafile): # read lammps init data file
     # allocate arrays from data
     global mass, aatype, pos, vel, acc, masses, bonds, hessian, zeta, Q
 
-    acc = numpy.zeros((natoms,3))
+    acc = np.zeros((natoms,3))
 
     mass, aatype, pos, vel, masses, bonds = mdinput.make_arrays(datafile,reps)
 
@@ -99,6 +99,11 @@ def force(): # get forces from potentials
 if (len(sys.argv) < 2):  # error check that we have an input file
     print("No input file? or wrong number of arguments")
     exit(1)
+
+if not re.search(re.compile(r'.+\.in'),sys.argv[1]):
+    print('Incorrect input file type.')
+    exit(1)
+
 print (sys.argv)
 
 if len(sys.argv) > 2:
@@ -124,7 +129,7 @@ else:
 
 readin() # read infile
 readinit(initfile)
-ke = (0.5*numpy.dot(masses.transpose()[0],numpy.array([numpy.dot(vec,vec) for vec in vel])))
+ke = (0.5*np.dot(masses.transpose()[0],np.array([np.dot(vec,vec) for vec in vel])))
 
 # inital force and adjustments
 zero_momentum(masses,vel)  # zero the momentum
@@ -149,12 +154,12 @@ for istep in range(1,nsteps+1):
         hessian = mdbond.inm(bond_style,nbonds,bonds,bondcoeff,pos,masses)
 
         # print(hessian)
-        w,v = numpy.linalg.eig(hessian)
+        w,v = np.linalg.eig(hessian)
         # remove lowest eigegvalues (translations of entire system)
-        idx = numpy.argmin(numpy.abs(w.real))
+        idx = np.argmin(np.abs(w.real))
         while abs(w[idx]) < tol:
-            w = numpy.delete(w,idx)
-            idx = numpy.argmin(numpy.abs(w.real))
+            w = np.delete(w,idx)
+            idx = np.argmin(np.abs(w.real))
         eig_array.append(w.real) # only get real part of array - imag do to round off error is small so we throw away.
 
     if(istep%ithermo==0): # write out thermodynamic data
@@ -179,25 +184,25 @@ if(nconf==0):
     print("No configurations calculated eigenvalues! thus NOT calculating historgram")
 else:
     print("Creating Histogram with",len(eig_array),"configurations")
-    q1, q3 = numpy.percentile(numpy.array(eig_array), [25, 75])
+    q1, q3 = np.percentile(np.array(eig_array), [25, 75])
     iqr = q3 - q1
 
     fd_width = 2*iqr/(nconf**(1/3))
-    fd = (numpy.amax(eig_array) - numpy.amin(eig_array))/fd_width
+    fd = (np.amax(eig_array) - np.amin(eig_array))/fd_width
     fd = int(fd) + 1
 
-    sturges = numpy.log2(nconf) + 1
+    sturges = np.log2(nconf) + 1
     sturges = int(sturges) + 1
 
     bin_ct = max(fd,sturges)
-    histo,histedge = numpy.histogram(numpy.array(eig_array),bins=bin_ct,density=True)
-    histdat = numpy.zeros((histo.size,2))
+    histo,histedge = np.histogram(np.array(eig_array),bins=bin_ct,density=True)
+    histdat = np.zeros((histo.size,2))
     for i in range(histo.size):
         histdat[i][0] = (histedge[i]+histedge[i+1])/2
         histdat[i][1] = histo[i]
         #print(histo,histedge,histdat)
     head = "Histogram of eigenvalues " + sys.argv[0] + " " + str(len(eig_array))
-    numpy.savetxt(inmfile,(histdat),header=head,fmt="%g")
+    np.savetxt(inmfile,(histdat),header=head,fmt="%g")
 
 print("Done!")
 exit(0)

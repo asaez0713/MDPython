@@ -26,7 +26,7 @@ for i in range(nwindow): # get initial data
         line  = lines[i*(natoms+1)+j+1].split()
         data[i][j] = line
 
-itime = 1
+itime = 10 
 tnow = time.time()
 ttime = tnow
 
