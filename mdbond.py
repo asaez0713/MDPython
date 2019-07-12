@@ -3,6 +3,11 @@
 import numpy as np
 import math
 
+kb = 1.38064852e-23
+w = [1.0/(2.0 - 2.0**(1/3)),0,0]
+w[2] = w[0]
+w[1] = 1.0 - 2.0*w[0]
+
 def bond_force(bond_style,nbonds,bonds,bondcoeff,pos,acc,masses):
 
     pbond = 0
@@ -90,19 +95,19 @@ def inm(bond_style,nbonds,bonds,bondcoeff,pos,masses):
                 hessian[ii+k][jj+l] -= elmij
                 hessian[jj+k][jj+l] += elmij
 
-    hessian += hessian.transpose()
-    for i in range(len(hessian)):
-        hessian[i][i] /= 2
-
     # mass weight
     ma = masses.reshape(pos.size)
     for i in range(pos.size):
-        hessian[i] /= ma[i]
+        hessian[i][i] /= ma[i]
+        for j in range(i+1,pos.size):
+            hessian[i][j] /= math.sqrt(ma[i]*ma[j])
+            hessian[j][i] = hessian[i][j]
 
     return hessian
 
 
-def nhchain(Q, G, dt, natoms, vtherm, zeta, ke, vel):
+def nhchain(Q, G, dt, natoms, vtherm, zeta, ke, vel, T):
+
     M = len(zeta)  # chain length
     scale = 1.0
     for i in range(3):

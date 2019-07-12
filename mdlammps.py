@@ -33,15 +33,11 @@ global logfile      # file to output thermodata
 box = np.zeros(3)
 pot = np.zeros(6)
 
-kb = 1.38064852e-23  # Boltzmann's constant
 T = 298.0            # system temp 
 zeta = np.zeros(2) 
 Q = np.array([1,1.1])            #to be updated - Q = 3NkT/(omega)^2 <- what are freqs?
 vtherm = np.zeros(2)
 G = np.zeros(2)
-w = [1/(2 - 2**(1/3)),0,0]
-w[2] = w[0]
-w[1] = 1- 2*w[0]
 
 #------------------------------------------------
 def zero_momentum(masses,vel): #zero the linear momentum
@@ -109,14 +105,14 @@ print (sys.argv)
 if len(sys.argv) > 2:
     if re.search('nvt',sys.argv[2],flags=re.IGNORECASE):
         def step(): # nose-hoover thermostat
-            global pos, vel, acc, dt, ke
+            global pos, vel, acc, dt, ke, kb, w
             
-            ke,vel = mdbond.nhchain(Q,G,dt,natoms,vtherm,zeta,ke,vel)
+            ke,vel = mdbond.nhchain(Q,G,dt,natoms,vtherm,zeta,ke,vel,T)
             vel += acc*dt/2.0
             pos += vel*dt
             force()
             vel += acc*dt/2.0
-            ke,vel = mdbond.nhchain(Q,G,dt,natoms,vtherm,zeta,ke,vel)
+            ke,vel = mdbond.nhchain(Q,G,dt,natoms,vtherm,zeta,ke,vel,T)
 
 else:
     def step(): # velocity verlet
