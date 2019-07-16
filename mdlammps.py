@@ -104,7 +104,7 @@ print (sys.argv)
 
 if len(sys.argv) > 2:
     if re.search('nvt',sys.argv[2],flags=re.IGNORECASE):
-        def step(): # nose-hoover thermostat
+        def step(): # nose-hoover chain
             global pos, vel, acc, dt, ke, kb, w
             
             ke,vel = mdbond.nhchain(Q,G,dt,natoms,vtherm,zeta,ke,vel,T)
