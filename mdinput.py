@@ -44,6 +44,11 @@ def readinvals(datafile):
                     else:
                         data.append(int(val[0]))
             line = f.readline()
+
+    if len(data) != 7:
+        print('Not enough data found. Check init file for proper formatting.')
+        return 0
+
     return data
 
 re_dict_arrays = {
@@ -168,12 +173,12 @@ def make_arrays(datafile,reps):
 re_dict_sysvals = {
         'nsteps': re.compile(r'run (?P<nsteps>\d+)'),
         'dt': re.compile(r'timestep (?P<dt>[\d.]+)'),
-        'initfile': re.compile(r'read_data (?P<initfile>[ a-z.]+)'),
+        'initfile': re.compile(r'read_data (?P<initfile>[ A-z.]+)'),
         'ithermo': re.compile(r'thermo (?P<ithermo>\d+)'),
-        'dump': re.compile(r'dump traj all xyz (?P<dump>\d+ [a-z.]+)'),
-        'bond_style': re.compile(r'bond_style (?P<bond_style>[a-z]+)'),
-        'logfile': re.compile(r'log (?P<logfile>[a-z.]+)'),
-        'inm': re.compile(r'inm (?P<inm>[a-z.]+ \d+)'),
+        'dump': re.compile(r'dump [A-z]+ all [A-z]+ (?P<dump>\d+ [A-z.]+)'),
+        'bond_style': re.compile(r'bond_style (?P<bond_style>[A-z ]+)'),
+        'logfile': re.compile(r'log (?P<logfile>[A-z.]+)'),
+        'inm': re.compile(r'inm (?P<inm>[A-z.]+ \d+)'),
         'reps': re.compile(r'replicate (?P<reps>\d+ \d+ \d+)')
         }
 
@@ -225,5 +230,9 @@ def readsysvals(infile):
             line = f.readline()
     
     bondcoeff = np.array(bondcoeff)
+
+    if len(data) != 10:
+        print('Not enough system data - check your input script for formatting.')
+        exit(1) 
 
     return data, bond_style, bondcoeff, reps
