@@ -18,8 +18,8 @@ def bond_force(bond_style,nbonds,bonds,bondcoeff,pos,acc,masses):
 
         rv = posj - posi
         r =  math.sqrt(np.dot(rv,rv))
-
-        if(bond_style==0):  # Harmonic
+        
+        if bond_style == 0:
             k0 = bondcoeff[itype][0]
             r0 = bondcoeff[itype][1]
             dr = r - r0
@@ -27,7 +27,7 @@ def bond_force(bond_style,nbonds,bonds,bondcoeff,pos,acc,masses):
             dudr = 2*k0*(r-r0)
             F = (dudr/r)*rv
 
-        if bond_style == 1: #Morse
+        elif bond_style == 1: #Morse
             D = bondcoeff[bonds[i][0]][0]
             alpha = bondcoeff[bonds[i][0]][1]
             r0 = bondcoeff[bonds[i][0]][2]
