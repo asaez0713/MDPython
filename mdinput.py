@@ -16,9 +16,9 @@ re_dict_data = {
         'atypes': re.compile(r'(?P<atypes>\d+) atom types\n'),
         'nbonds': re.compile(r'(?P<nbonds>\d+) bonds\n'),
         'tbonds': re.compile(r'(?P<tbonds>\d+) bond types\n'),
-        'box_x': re.compile(r'(?P<box_x>[\d-]+ [\d-]+) xlo xhi\n'),
-        'box_y': re.compile(r'(?P<box_y>[\d-]+ [\d-]+) ylo yhi\n'),
-        'box_z': re.compile(r'(?P<box_z>[\d-]+ [\d-]+) zlo zhi\n')
+        'box_x': re.compile(r'(?P<box_x>[.\d-]+ [.\d-]+) xlo xhi\n'),
+        'box_y': re.compile(r'(?P<box_y>[.\d-]+ [.\d-]+) ylo yhi\n'),
+        'box_z': re.compile(r'(?P<box_z>[.\d-]+ [.\d-]+) zlo zhi\n')
         }
 
 def parse_line(line,d):
@@ -44,7 +44,7 @@ def readinvals(datafile):
                     else:
                         data.append(int(val[0]))
             line = f.readline()
-
+    
     if len(data) != 7:
         print('Not enough data found. Check init file for proper formatting.')
         return 0
