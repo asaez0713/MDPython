@@ -1,6 +1,5 @@
 # import routines for MDPython
 #TODO
-#Make dict key loop individual to standardize input
 #Fix replicate method
 #Add angles
 
@@ -25,6 +24,8 @@ re_dict_data = {
         'box_z': re.compile(r'(?P<box_z>[.\d-]+ [.\d-]+) zlo zhi\n')
         }
 
+data_lst = [key for key in re_dict_data]
+
 def parse_line(line,d):
     for key, rx in d.items():
         match = rx.search(line)
@@ -35,25 +36,39 @@ def parse_line(line,d):
 
 def readinvals(datafile):
     with open(datafile,'r') as f:
-        data = []
+        data = [-1]*7
         line = f.readline()
         while line:
             key, match = parse_line(line,re_dict_data)
-            for item in re_dict_data:
-                if key == item:
-                    val = match.group(item)
-                    val = val.split()
-                    if len(val) > 1:
-                        data.append(float(val[1])-float(val[0]))
-                    else:
-                        data.append(int(val[0]))
+            if match:
+                val = match.group(key)
+            if key == 'natoms':
+                data[0] = int(val)
+            if key == 'atypes':
+                data[1] = int(val)
+            if key == 'nbonds':
+                data[2] = int(val)
+            if key == 'tbonds':
+                data[3] = int(val)
+            if key == 'box_x':
+                val = val.split()
+                temp = float(val[1]) - float(val[0])
+                data[4] = temp
+            if key == 'box_y':
+                val = val.split()
+                temp = float(val[1]) - float(val[0])
+                data[5] = temp
+            if key == 'box_z':
+                val = val.split()
+                temp = float(val[1]) - float(val[0])
+                data[6] = temp
             line = f.readline()
     
-    if len(data) != 7:
-        print('Not enough data found. Check init file for proper formatting.')
-        return 0
-
-    print(data)
+    for i in range(len(data)):
+        if data[i] == -1:
+            print('Not enough data found. Check init file for proper formatting.')
+            print('Not found:', data_lst[i])
+            exit(1)
 
     return data
 
@@ -190,41 +205,47 @@ re_dict_sysvals = {
         'reps': re.compile(r'replicate (?P<reps>\d+ \d+ \d+)')
         }
 
+sysvals_lst = [key for key in re_dict_sysvals]
+
 def readsysvals(infile):
     with open(infile,'r') as f:
-        data = []
+        data = [-1]*10
         bondcoeff = []
         reps = [1,1,1]
         line = f.readline()
         while line:
             key, match = parse_line(line,re_dict_sysvals)
-            if key in ['nsteps','ithermo']:
-                data.append(int(match.group(key)))
+            if match:
+                val = match.group(key)
+            if key == 'nsteps':
+                data[9] = int(val)
             if key == 'dt':
-                data.append(float(match.group(key)))
+                data[0] = float(val)
             if key == 'initfile':
-                initfile = match.group(key).strip(' ')
-                data.append(initfile)
+                initfile = val.strip(' ')
+                data[1] = initfile
                 natoms, atypes, nbonds, tbonds, box[0], box[1], box[2] = readinvals(initfile) 
-            if key in ['logfile','bond_style']:
-                data.append(match.group(key).strip(' '))
+            if key == 'ithermo':
+                data[5] = int(val)
+            if key == 'logfile':
+                data[6] = val.strip(' ')
             if key == 'dump':
-                val = match.group(key).split()
-                data.append(int(val[0]))
-                data.append(val[1])
+                val = val.split()
+                data[3] = int(val[0])
+                data[4] = val[1]
             if key == 'inm':
                 val = match.group(key).split()
-                data.append(val[0])
-                data.append(int(val[1]))
+                data[7] = val[0]
+                data[8] = int(val[1])
             if key == 'bond_style':
-                bond_styles = match.group(key)
-                if re.search('harmonic',bond_styles,flags=re.IGNORECASE):
+                data[2] = val.strip(' ')
+                if re.search('harmonic',val,flags=re.IGNORECASE):
                     bond_style = 0
                     print('Reading in harmonic bond coefficients for',tbonds,'types')
                     for i in range(tbonds):
                         line = f.readline()
                         bondcoeff.append([float(line.split()[j+2]) for j in range(2)])
-                elif re.search('morse',bond_styles,flags=re.IGNORECASE):
+                elif re.search('morse',val,flags=re.IGNORECASE):
                     bond_style = 1
                     print('Reading in morse bond coefficients for',tbonds,'types')
                     for i in range(tbonds):
@@ -239,8 +260,10 @@ def readsysvals(infile):
     
     bondcoeff = np.array(bondcoeff)
 
-    if len(data) != 10:
-        print('Not enough system data - check your input script for formatting.')
-        exit(1) 
+    for i in range(len(data)):
+        if data[i] == -1:
+            print('Not enough data found. Check init file for proper formatting.')
+            print('Not found:', sysvals_lst[i])
+            exit(1)
 
     return data, bond_style, bondcoeff, reps
