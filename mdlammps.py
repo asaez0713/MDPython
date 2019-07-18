@@ -33,6 +33,7 @@ global fix_type
 
 box = np.zeros(3)
 pot = np.zeros(6)
+fix_type = None
 
 kb = 1.38064852e-23
 zeta = np.zeros(2)
