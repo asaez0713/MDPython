@@ -1,4 +1,8 @@
 # import routines for MDPython
+#TODO
+#Make dict key loop individual to standardize input
+#Fix replicate method
+#Add angles
 
 import re
 import numpy as np
@@ -48,6 +52,8 @@ def readinvals(datafile):
     if len(data) != 7:
         print('Not enough data found. Check init file for proper formatting.')
         return 0
+
+    print(data)
 
     return data
 
@@ -157,6 +163,8 @@ def make_arrays(datafile,reps):
                 for vec in pos_copy:
                     temp = [sum(x) for x in zip(vec,offset)]
                     pos.append(temp)
+                for vec in vel_copy:
+                    np.append(vel,vec)
                 bond_offset = [0,count*len(pos_copy),count*len(pos_copy)]
                 for bond in bonds_copy:
                     temp = [sum(x) for x in zip(bond,bond_offset)]
@@ -173,12 +181,12 @@ def make_arrays(datafile,reps):
 re_dict_sysvals = {
         'nsteps': re.compile(r'run (?P<nsteps>\d+)'),
         'dt': re.compile(r'timestep (?P<dt>[\d.]+)'),
-        'initfile': re.compile(r'read_data (?P<initfile>[ A-z.]+)'),
+        'initfile': re.compile(r'read_data (?P<initfile>[ _A-z.\d]+)'),
         'ithermo': re.compile(r'thermo (?P<ithermo>\d+)'),
-        'dump': re.compile(r'dump [A-z]+ all [A-z]+ (?P<dump>\d+ [A-z.]+)'),
+        'dump': re.compile(r'dump [A-z]+ all [A-z]+ (?P<dump>\d+ [_A-z.\d]+)'),
         'bond_style': re.compile(r'bond_style (?P<bond_style>[A-z ]+)'),
-        'logfile': re.compile(r'log (?P<logfile>[A-z.]+)'),
-        'inm': re.compile(r'inm (?P<inm>[A-z.]+ \d+)'),
+        'logfile': re.compile(r'log (?P<logfile>[_A-z.\d]+)'),
+        'inm': re.compile(r'inm (?P<inm>[_A-z.\d]+ \d+)'),
         'reps': re.compile(r'replicate (?P<reps>\d+ \d+ \d+)')
         }
 

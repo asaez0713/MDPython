@@ -1,4 +1,7 @@
 # mdbond.py  # bonding routines for mdpython
+#TODO
+#Add angle potential
+#Add LJ/bends/torsions
 
 import numpy as np
 import math
