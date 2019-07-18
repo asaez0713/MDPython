@@ -15,13 +15,13 @@ global box
 box = np.zeros(3)
 
 re_dict_data = {
-        'natoms': re.compile(r'(?P<natoms>\d+) atoms\n'),
-        'atypes': re.compile(r'(?P<atypes>\d+) atom types\n'),
-        'nbonds': re.compile(r'(?P<nbonds>\d+) bonds\n'),
-        'tbonds': re.compile(r'(?P<tbonds>\d+) bond types\n'),
-        'box_x': re.compile(r'(?P<box_x>[.\d-]+ [.\d-]+) xlo xhi\n'),
-        'box_y': re.compile(r'(?P<box_y>[.\d-]+ [.\d-]+) ylo yhi\n'),
-        'box_z': re.compile(r'(?P<box_z>[.\d-]+ [.\d-]+) zlo zhi\n')
+        'natoms': re.compile(r'^(?P<natoms>\d+) atoms\n'),
+        'atypes': re.compile(r'^(?P<atypes>\d+) atom types\n'),
+        'nbonds': re.compile(r'^(?P<nbonds>\d+) bonds\n'),
+        'tbonds': re.compile(r'^(?P<tbonds>\d+) bond types\n'),
+        'box_x': re.compile(r'^(?P<box_x>[.\d-]+ [.\d-]+) xlo xhi\n'),
+        'box_y': re.compile(r'^(?P<box_y>[.\d-]+ [.\d-]+) ylo yhi\n'),
+        'box_z': re.compile(r'^(?P<box_z>[.\d-]+ [.\d-]+) zlo zhi\n')
         }
 
 data_lst = [key for key in re_dict_data]
@@ -73,10 +73,10 @@ def readinvals(datafile):
     return data
 
 re_dict_arrays = {
-        'masses': re.compile(r'Masses\n'),
-        'atoms': re.compile(r'Atoms'),
-        'vels': re.compile(r'Velocities\n'),
-        'bonds': re.compile(r'Bonds\n')
+        'masses': re.compile(r'^Masses'),
+        'atoms': re.compile(r'^Atoms'),
+        'vels': re.compile(r'^Velocities'),
+        'bonds': re.compile(r'^Bonds')
         }
 
 def make_arrays(datafile,reps):
@@ -194,15 +194,15 @@ def make_arrays(datafile,reps):
     return np.array(mass), np.array(aatype), np.array(pos), np.array(vel), np.array(masses), np.array(bonds)
 
 re_dict_sysvals = {
-        'nsteps': re.compile(r'run (?P<nsteps>\d+)'),
-        'dt': re.compile(r'timestep (?P<dt>[\d.]+)'),
-        'initfile': re.compile(r'read_data (?P<initfile>[ _A-z.\d]+)'),
-        'ithermo': re.compile(r'thermo (?P<ithermo>\d+)'),
-        'dump': re.compile(r'dump [A-z]+ all [A-z]+ (?P<dump>\d+ [_A-z.\d]+)'),
-        'bond_style': re.compile(r'bond_style (?P<bond_style>[A-z ]+)'),
-        'logfile': re.compile(r'log (?P<logfile>[_A-z.\d]+)'),
-        'inm': re.compile(r'inm (?P<inm>[_A-z.\d]+ \d+)'),
-        'reps': re.compile(r'replicate (?P<reps>\d+ \d+ \d+)')
+        'nsteps': re.compile(r'^run (?P<nsteps>\d+)'),
+        'dt': re.compile(r'^timestep (?P<dt>[\d.]+)'),
+        'initfile': re.compile(r'^read_data (?P<initfile>[ _A-z.\d]+)'),
+        'ithermo': re.compile(r'^thermo (?P<ithermo>\d+)'),
+        'dump': re.compile(r'^dump [A-z]+ all [A-z]+ (?P<dump>\d+ [_A-z.\d]+)'),
+        'bond_style': re.compile(r'^bond_style (?P<bond_style>[A-z ]+)'),
+        'logfile': re.compile(r'^log (?P<logfile>[_A-z.\d]+)'),
+        'inm': re.compile(r'^inm (?P<inm>[_A-z.\d]+ \d+)'),
+        'reps': re.compile(r'^replicate (?P<reps>\d+ \d+ \d+)')
         }
 
 sysvals_lst = [key for key in re_dict_sysvals]
