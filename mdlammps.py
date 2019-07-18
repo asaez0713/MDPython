@@ -29,13 +29,13 @@ global bonds        # bonds (array with type, ibond, jbond)
 global hessian      # hessian matrix
 global abtype       # array of bond types
 global logfile      # file to output thermodata
+global fix_type
 
 box = np.zeros(3)
 pot = np.zeros(6)
 
-T = 298.0            # system temp 
-zeta = np.zeros(2) 
-Q = np.array([1,1.1])            #to be updated - Q = 3NkT/(omega)^2 <- what are freqs?
+kb = 1.38064852e-23
+zeta = np.zeros(2)
 vtherm = np.zeros(2)
 G = np.zeros(2)
 
@@ -45,13 +45,19 @@ def zero_momentum(masses,vel): #zero the linear momentum
     tmom = np.sum(mom,axis=0)/np.sum(masses,axis=0) #total mom/ma
     vel -= tmom #zero out
 
-#-------------------------------------------------
-def readinit(datafile): # read lammps init data file
+def readin(): # read lammps like infile
 
+    global nsteps, dt, initfile, ithermo, idump, dumpfile, bond_style, bondcoeff
+    global logfile, inmfile, inmo
+    global bondcoeff, reps, fix_type
     global natoms, atypes, nbonds, tbonds, box
 
-    # unpack or destructuring
-    natoms, atypes, nbonds, tbonds, box[0], box[1], box[2] = mdinput.readinvals(datafile) 
+    # print lines
+    data, bond_style, bondcoeff, reps, fix_type, var_lst = mdinput.readsysvals(sys.argv[1]) # read lammps in file
+    dt, initfile, bond_styles, idump, dumpfile, ithermo, logfile, inmfile, inmo, nsteps = data
+    print("dt, initfile, bond_styles, idump, dumpfile, ithermo, logfile, inmfile, inmo, nsteps",data)
+    
+    natoms, atypes, nbonds, tbonds, box[0], box[1], box[2] = mdinput.readinvals(initfile) 
     print("Natoms",natoms," Atypes",atypes," Bonds",nbonds," Btypes",tbonds)
     print("Box",box)
 
@@ -60,19 +66,13 @@ def readinit(datafile): # read lammps init data file
 
     acc = np.zeros((natoms,3))
 
-    mass, aatype, pos, vel, masses, bonds = mdinput.make_arrays(datafile,reps)
-
-#-------------------------------------------
-def readin(): # read lammps like infile
-
-    global nsteps, dt, initfile, ithermo, idump, dumpfile, bond_style, bondcoeff
-    global logfile, inmfile, inmo
-    global bondcoeff, reps
-
-    # print lines
-    data, bond_style, bondcoeff, reps = mdinput.readsysvals(sys.argv[1]) # read lammps in file
-    dt, initfile, bond_styles, idump, dumpfile, ithermo, logfile, inmfile, inmo, nsteps = data
-    print("dt, initfile, bond_styles, idump, dumpfile, ithermo, logfile, inmfile, inmo, nsteps",data)
+    mass, aatype, pos, vel, masses, bonds = mdinput.make_arrays(initfile,reps)
+    
+    if re.search('nvt',fix_type,flags=re.IGNORECASE):
+        global T, Tdamp, Q
+        var = [float(num) for num in var_lst[:3]]
+        T, T, Tdamp = var
+        Q = np.array([3*natoms*T*Tdamp*Tdamp]*2)
 
 #-----------------------------------------------------------
 def force(): # get forces from potentials
@@ -102,8 +102,11 @@ if not re.search(re.compile(r'.+\.in'),sys.argv[1]):
 
 print (sys.argv)
 
-if len(sys.argv) > 2:
-    if re.search('nvt',sys.argv[2],flags=re.IGNORECASE):
+readin() # read infile
+ke = (0.5*np.dot(masses.transpose()[0],np.array([np.dot(vec,vec) for vec in vel])))
+
+if fix_type:
+    if fix_type == 'nvt':
         def step(): # nose-hoover chain
             global pos, vel, acc, dt, ke, kb, w
             
@@ -122,10 +125,6 @@ else:
         pos += vel*dt
         force()
         vel += acc*dt/2.0
-
-readin() # read infile
-readinit(initfile)
-ke = (0.5*np.dot(masses.transpose()[0],np.array([np.dot(vec,vec) for vec in vel])))
 
 # inital force and adjustments
 zero_momentum(masses,vel)  # zero the momentum

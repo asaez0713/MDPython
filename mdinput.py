@@ -202,7 +202,8 @@ re_dict_sysvals = {
         'bond_style': re.compile(r'^bond_style (?P<bond_style>[A-z ]+)'),
         'logfile': re.compile(r'^log (?P<logfile>[_A-z.\d]+)'),
         'inm': re.compile(r'^inm (?P<inm>[_A-z.\d]+ \d+)'),
-        'reps': re.compile(r'^replicate (?P<reps>\d+ \d+ \d+)')
+        'reps': re.compile(r'^replicate (?P<reps>\d+ \d+ \d+)'),
+        'fix': re.compile(r'^fix [_A-z\d]+ [_A-z\d]+ (?P<fix>[A-z]+)')
         }
 
 sysvals_lst = [key for key in re_dict_sysvals]
@@ -253,6 +254,12 @@ def readsysvals(infile):
                         bondcoeff.append([float(line.split()[j+2]) for j in range(3)])
                 else:
                     print('Unrecognized bond type')
+            if key == 'fix':
+                fix_type = val
+                print(fix_type)
+                words = line.split()
+                var_lst = words[4:]
+                print(var_lst)
             if key == 'reps':
                 vals = match.group(key).split()
                 reps = [int(num) for num in vals]
@@ -266,4 +273,4 @@ def readsysvals(infile):
             print('Not found:', sysvals_lst[i])
             exit(1)
 
-    return data, bond_style, bondcoeff, reps
+    return data, bond_style, bondcoeff, reps, fix_type, var_lst
