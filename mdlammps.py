@@ -118,6 +118,19 @@ if fix_type:
             vel += acc*dt/2.0
             ke,vel = mdbond.nhchain(Q,G,dt,natoms,vtherm,zeta,ke,vel,T)
 
+    elif fix_type == 'nve':
+        def step(): # velocity verlet
+            global pos, vel, acc, dt
+
+            vel += acc*dt/2.0
+            pos += vel*dt
+            force()
+            vel += acc*dt/2.0
+
+    else:
+        print('Unrecognized fix type')
+        exit(1)
+
 else:
     def step(): # velocity verlet
         global pos, vel, acc, dt
@@ -173,6 +186,11 @@ for istep in range(1,nsteps+1):
 
 print('Done dynamics! total time = {:g} seconds'.format(time.time()-ttime))
 mdoutput.write_init("test.init",istep-1,natoms,atypes,nbonds,tbonds,box,mass,pos,vel,bonds,aatype)
+
+print(eig_array[:10])
+
+eig_array = np.array(eig_array)
+eig_array = [np.sign(x)*math.sqrt(abs(x)) for x in eig_array.flatten()]
 
 #Create histogram!
 nconf = len(eig_array)
