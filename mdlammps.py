@@ -187,8 +187,6 @@ for istep in range(1,nsteps+1):
 print('Done dynamics! total time = {:g} seconds'.format(time.time()-ttime))
 mdoutput.write_init("test.init",istep-1,natoms,atypes,nbonds,tbonds,box,mass,pos,vel,bonds,aatype)
 
-print(eig_array[:10])
-
 eig_array = np.array(eig_array)
 eig_array = [np.sign(x)*math.sqrt(abs(x)) for x in eig_array.flatten()]
 
