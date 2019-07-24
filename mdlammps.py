@@ -188,7 +188,7 @@ print('Done dynamics! total time = {:g} seconds'.format(time.time()-ttime))
 mdoutput.write_init("test.init",istep-1,natoms,atypes,nbonds,tbonds,box,mass,pos,vel,bonds,aatype)
 
 eig_array = np.array(eig_array)
-eig_array = [np.sign(x)*math.sqrt(abs(x)) for x in eig_array.flatten()]
+eig_array = [np.sign(x)*math.sqrt(abs(x)) for x in eig_array.ravel()]
 
 #Create histogram!
 nconf = len(eig_array)
