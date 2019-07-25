@@ -9,8 +9,7 @@ file = open(sys.argv[1],"r")
 
 lines = file.readlines()
 
-natoms = lines[0].split()[1]
-natoms = int(natoms)
+natoms = int(lines[0].split()[1])
 dt = float(lines[natoms+1].split()[3]) - float(lines[0].split()[3])
 print('natoms:',natoms)
 print('dt:',dt)
@@ -29,7 +28,6 @@ for i in range(nconf): # get initial data
 norm = np.sum([np.linalg.norm(data[0][j])**2 for j in range(natoms)])
 
 data = np.transpose(data,(1,0,2))
-print(data.shape)
 
 def xcorr(x):
     fftx = fft(x, n = 5, axis=1)
@@ -38,18 +36,21 @@ def xcorr(x):
     ret = np.sum(ret,axis=1)
     return ret
 
-itime = 10 
+itime = 1 
 tnow = time.time()
 ttime = tnow
 
 for i in range(len(data)):
     vac += xcorr(data[i])
+    if(itime < time.time()-tnow): # report where we are
+        print('conf = {}/{} = {:.4f}%, time = {:g}'.format(i,nconf,i/nconf*100,time.time()-ttime))
+        tnow = time.time()
 
 vac /= norm
 
 print('Done correlating. total time = {:g} seconds'.format(time.time()-ttime))
 
-print("Writing vac.dat")
+print("Writing vac_new.dat")
 file = open("vac_new.dat","w")
 for i in range(nconf):
     line = str(dt*i) + " " + str(vac[i]) + "\n"
