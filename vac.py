@@ -5,7 +5,11 @@ import sys
 import time
 from numpy.fft import *
 
-file = open(sys.argv[1],"r")
+try:
+    file = open(sys.argv[1],"r")
+except IndexError:
+    print('No input file specified.')
+    exit(1)
 
 lines = file.readlines()
 
